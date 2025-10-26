@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlitterMaskGenerator_V6</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            padding: 30px;
+            background: #15171a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .app-container {
+            display: flex;
+            max-width: 900px;
+            width: 95%;
+            gap: 30px;
+        }
+
+        .preview-section {
+            width: 100%;
+            background: #2f3137;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            /* 使用padding技巧创建正方形 */
+            height: 0;
+            padding-bottom: 100%; /* 基于宽度计算高度 */
+            position: relative;
+        }
+
+        .preview-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #1a1c20;
+            overflow: hidden;
+            cursor: grab;
+        }
+
+        .preview-container:active {
+            cursor: grabbing;
+        }
+
+        #preview {
+            image-rendering: pixelated;
+            max-width: 100%;
+            max-height: 100%;
+            transition: transform 0.2s ease;
+        }
+
+        .zoom-info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .controls-section {
+            width: 300px;
+            background: #2f3137;
+            border-radius: 12px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .app-title {
+            color: #f8f8f7;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #444;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .control-title {
+            color: #f8f8f7;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .size-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 10px;
+        }
+
+        .size-btn {
+            background: #1a1c20;
+            color: #f8f8f7;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .size-btn:hover {
+            background: #2a2c30;
+        }
+
+        .size-btn.active {
+            background: #f8f8f7;
+            color: #15171a;
+            border-color: #f8f8f7;
+        }
+
+        .input-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-row label {
+            color: #f8f8f7;
+            font-size: 14px;
+        }
+
+        .input-row input {
+            padding: 8px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            background: #1a1c20;
+            color: #f8f8f7;
+        }
+
+        .channel-count-options {
+            display: flex;
+            gap: 10px;
+        }
+
+        .channel-count-btn {
+            flex: 1;
+            background: #1a1c20;
+            color: #f8f8f7;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all  0.2s;
+            text-align: center;
+        }
+
+        .channel-count-btn:hover {
+            background: #2a2c30;
+        }
+
+        .channel-count-btn.active {
+            background: #f8f8f7;
+            color: #15171a;
+            border-color: #f8f8f7;
+        }
+
+        .channel-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .channel-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .channel-label {
+            color: #f8f8f7;
+            font-size: 14px;
+            width: 30px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .channel-option {
+            flex: 1;
+            display: flex;
+            gap: 8px;
+        }
+
+        .channel-btn {
+            flex: 1;
+            background: #1a1c20;
+            color: #f8f8f7;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .channel-btn:hover {
+            background: #2a2c30;
+        }
+
+        .channel-btn.active {
+            background: #f8f8f7;
+            color: #15171a;
+            border-color: #f8f8f7;
+        }
+
+        .download-options {
+            display: flex;
+            gap: 10px;
+        }
+
+        .download-btn {
+            flex: 1;
+            background: #f8f8f7;
+            color: #15171a;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+            padding: 12px;
+            font-weight: bold;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        .download-btn:hover {
+            background: #d4d4d2;
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+
+            .controls-section {
+                width: 100%;
+            }
+
+            .preview-section {
+                min-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- 左侧图片预览区域 -->
+    <div class="preview-section">
+        <div class="preview-container" id="previewContainer">
+            <canvas id="preview" width="300" height="300"></canvas>
+            <div class="zoom-info" id="zoomInfo">100%</div>
+        </div>
+    </div>
+
+    <!-- 右侧控制面板 -->
+    <div class="controls-section">
+        <!-- 添加应用标题 -->
+        <div class="app-title">GlitterMaskGenerator_V6</div>
+
+        <div class="control-group">
+            <div class="control-title">尺寸</div>
+            <div class="size-options">
+                <div class="size-btn" data-size="32">32</div>
+                <div class="size-btn" data-size="64">64</div>
+                <div class="size-btn" data-size="128">128</div>
+                <div class="size-btn" data-size="256">256</div>
+                <div class="size-btn" data-size="512">512</div>
+                <div class="size-btn" data-size="1024">1024</div>
+                <div class="size-btn" data-size="2048">2048</div>
+                <div class="size-btn" data-size="4096">4096</div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="control-title">噪声参数</div>
+            <div class="input-row">
+                <label for="noiseSize">噪声缩放:</label>
+                <input type="number" id="noiseSize" value="20" min="1" max="100">
+            </div>
+            <div class="input-row">
+                <label for="noiseSeed">噪声种子:</label>
+                <input type="number" id="noiseSeed" value="1" min="1" max="1000">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="control-title">通道数量</div>
+            <div class="channel-count-options">
+                <div class="channel-count-btn active" data-count="1">1通道 (灰度)</div>
+                <div class="channel-count-btn" data-count="3">3通道 (RGB)</div>
+                <div class="channel-count-btn" data-count="4">4通道 (RGBA)</div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="control-title">通道设置</div>
+            <div class="channel-controls" id="channelControls">
+                <div class="channel-row">
+                    <div class="channel-label">R</div>
+                    <div class="channel-option">
+                        <div class="channel-btn active" data-channel="r" data-type="random">随机数</div>
+                        <div class="channel-btn" data-channel="r" data-type="distance">距离</div>
+                    </div>
+                </div>
+                <div class="channel-row">
+                    <div class="channel-label">G</div>
+                    <div class="channel-option">
+                        <div class="channel-btn active" data-channel="g" data-type="random">随机数</div>
+                        <div class="channel-btn" data-channel="g" data-type="distance">距离</div>
+                    </div>
+                </div>
+                <div class="channel-row">
+                    <div class="channel-label">B</div>
+                    <div class="channel-option">
+                        <div class="channel-btn active" data-channel="b" data-type="random">随机数</div>
+                        <div class="channel-btn" data-channel="b" data-type="distance">距离</div>
+                    </div>
+                </div>
+                <div class="channel-row">
+                    <div class="channel-label">A</div>
+                    <div class="channel-option">
+                        <div class="channel-btn active" data-channel="a" data-type="random">随机数</div>
+                        <div class="channel-btn" data-channel="a" data-type="distance">距离</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="control-title">下载</div>
+            <div class="download-options">
+                <button onclick="download('png')" class="download-btn">PNG</button>
+                <button onclick="download('tga')" class="download-btn">TGA</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('preview');
+    const gl = canvas.getContext('webgl');
+    let currentSize = 256;
+    let zoomLevel = 1;
+    let noiseSize = 20;
+    let noiseSeed = 1;
+    let channelCount = 1;
+
+    let channelTypes = {
+        r: 'random',
+        g: 'random',
+        b: 'random',
+        a: 'random'
+    };
+
+    if (!gl) {
+        alert('您的浏览器不支持WebGL，将使用Canvas 2D回退方案');
+        initCanvas2D();
+    } else {
+        initWebGL();
+    }
+
+    function initWebGL() {
+        const vsSource = `
+            attribute vec2 aPosition;
+            varying vec2 vTexCoord;
+            void main() {
+                gl_Position = vec4(aPosition, 0.0, 1.0);
+                vTexCoord = aPosition * 0.5 + 0.5;
+            }
+        `;
+
+        // 修改后的Voronoi/Worley噪声：计算到中心的距离a和到边界的距离b，输出1 - (a/(a+b))
+        const fsSource = `
+            precision highp float;
+            varying vec2 vTexCoord;
+            uniform float uSize;
+            uniform float uNoiseSize;
+            uniform float uSeed;
+            uniform int uRType;
+            uniform int uGType;
+            uniform int uBType;
+            uniform int uAType;
+            uniform int uChannelCount;
+
+            float hash1(vec3 p3) {
+                p3 = fract(p3 * 0.1031);
+                p3 += dot(p3, p3.yxz + 33.33);
+                return fract((p3.x + p3.y) * p3.z);
+            }
+
+            vec2 random2(vec2 p, float seed) {
+                return vec2(hash1(vec3(p, seed)), hash1(vec3(p + 1.0, seed + 1.0)));
+            }
+
+            float randomForChannel(vec2 p, float seed, int channel) {
+                float channelOffset = float(channel) * 123.456;
+                return hash1(vec3(p, seed + channelOffset));
+            }
+
+            void main() {
+                vec2 st = vTexCoord * uSize;
+                vec2 cell = floor(st / uNoiseSize);
+                vec2 local = fract(st / uNoiseSize);
+
+                // 寻找最近的两个点来计算Worley噪声
+                float minDist = 1.0;
+                float secondMinDist = 1.0;
+                vec2 closestPoint = vec2(0.0);
+
+                for (int y = -1; y <= 1; y++) {
+                    for (int x = -1; x <= 1; x++) {
+                        vec2 neighbor = vec2(float(x), float(y));
+                        vec2 cellPos = cell + neighbor;
+                        vec2 point = random2(cellPos, uSeed);
+                        vec2 diff = neighbor + point - local;
+                        float dist = length(diff);
+                        
+                        if (dist < minDist) {
+                            secondMinDist = minDist;
+                            minDist = dist;
+                            closestPoint = cellPos + point;
+                        } else if (dist < secondMinDist) {
+                            secondMinDist = dist;
+                        }
+                    }
+                }
+
+                float closestValue_r = randomForChannel(closestPoint, uSeed, 0);
+                float closestValue_g = randomForChannel(closestPoint, uSeed, 1);
+                float closestValue_b = randomForChannel(closestPoint, uSeed, 2);
+                float closestValue_a = randomForChannel(closestPoint, uSeed, 3);
+
+                // Worley噪声计算：a = 到最近点的距离，b = 到第二近点的距离 - a
+                float a = minDist;
+                float b = secondMinDist - a;
+                
+                // 防止除以零
+                float worleyValue = 1.0 - (a / (a + b + 0.0001));
+
+                float rValue = uRType == 0 ? closestValue_r : worleyValue;
+                float gValue = uGType == 0 ? closestValue_g : worleyValue;
+                float bValue = uBType == 0 ? closestValue_b : worleyValue;
+                float aValue = uAType == 0 ? closestValue_a : worleyValue;
+
+                if (uChannelCount == 1) {
+                    gl_FragColor = vec4(rValue, rValue, rValue, 1.0);
+                } else if (uChannelCount == 3) {
+                    gl_FragColor = vec4(rValue, gValue, bValue, 1.0);
+                } else {
+                    gl_FragColor = vec4(rValue, gValue, bValue, aValue);
+                }
+            }
+        `;
+
+        const vertexShader = compileShader(gl, gl.VERTEX_SHADER, vsSource);
+        const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fsSource);
+        const program = gl.createProgram();
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            console.error('WebGL program link error:', gl.getProgramInfoLog(program));
+            initCanvas2D();
+            return;
+        }
+
+        gl.useProgram(program);
+
+        const vertices = new Float32Array([-1,-1,1,-1,-1,1, -1,1,1,-1,1,1]);
+        const vertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+        const positionLocation = gl.getAttribLocation(program, "aPosition");
+        gl.enableVertexAttribArray(positionLocation);
+        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+        const uSize = gl.getUniformLocation(program, "uSize");
+        const uNoiseSize = gl.getUniformLocation(program, "uNoiseSize");
+        const uSeed = gl.getUniformLocation(program, "uSeed");
+        const uRType = gl.getUniformLocation(program, "uRType");
+        const uGType = gl.getUniformLocation(program, "uGType");
+        const uBType = gl.getUniformLocation(program, "uBType");
+        const uAType = gl.getUniformLocation(program, "uAType");
+        const uChannelCount = gl.getUniformLocation(program, "uChannelCount");
+
+        function generate() {
+            const size = Math.min(currentSize, 4096);
+            canvas.width = size;
+            canvas.height = size;
+            gl.viewport(0, 0, size, size);
+
+            gl.uniform1f(uSize, size);
+            gl.uniform1f(uNoiseSize, noiseSize);
+            gl.uniform1f(uSeed, noiseSeed);
+            gl.uniform1i(uRType, channelTypes.r === 'random' ? 0 : 1);
+            gl.uniform1i(uGType, channelTypes.g === 'random' ? 0 : 1);
+            gl.uniform1i(uBType, channelTypes.b === 'random' ? 0 : 1);
+            gl.uniform1i(uAType, channelTypes.a === 'random' ? 0 : 1);
+            gl.uniform1i(uChannelCount, channelCount);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            updateZoom();
+        }
+
+        setupEventListeners(generate);
+    }
+
+    function initCanvas2D() {
+        const ctx = canvas.getContext('2d');
+        function generate() {
+            const size = Math.min(currentSize, 4096);
+            canvas.width = size;
+            canvas.height = size;
+            generateVoronoiNoise2D(size, noiseSize, noiseSeed);
+            updateZoom();
+        }
+        setupEventListeners(generate);
+    }
+
+    function setupEventListeners(generateFunc) {
+        document.getElementById('noiseSize').addEventListener('input', () => {
+            noiseSize = parseInt(document.getElementById('noiseSize').value) || 20;
+            generateFunc();
+        });
+
+        document.getElementById('noiseSeed').addEventListener('input', () => {
+            noiseSeed = parseInt(document.getElementById('noiseSeed').value) || 1;
+            generateFunc();
+        });
+
+        document.querySelectorAll('.size-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentSize = parseInt(this.dataset.size);
+                generateFunc();
+            });
+        });
+
+        document.querySelectorAll('.channel-count-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.channel-count-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                channelCount = parseInt(this.dataset.count);
+                updateChannelControlsVisibility();
+                generateFunc();
+            });
+        });
+
+        document.querySelectorAll('.channel-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const channel = this.dataset.channel;
+                const type = this.dataset.type;
+                this.parentElement.querySelectorAll('.channel-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                channelTypes[channel] = type;
+                generateFunc();
+            });
+        });
+
+        const previewContainer = document.getElementById('previewContainer');
+        previewContainer.addEventListener('wheel', e => {
+            e.preventDefault();
+            const delta = -Math.sign(e.deltaY);
+            let speed = zoomLevel > 1 ? 0.5 : 0.1;
+            zoomLevel = Math.max(0.1, Math.min(10, zoomLevel + delta * speed));
+            updateZoom();
+        });
+
+        document.querySelector('[data-size="256"]').classList.add('active');
+        document.querySelector('[data-count="1"]').classList.add('active');
+        updateChannelControlsVisibility();
+        generateFunc();
+    }
+
+    function updateChannelControlsVisibility() {
+        document.querySelectorAll('.channel-row').forEach((row, i) => {
+            row.style.display = i < channelCount ? 'flex' : 'none';
+        });
+    }
+
+    function compileShader(gl, type, source) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+            gl.deleteShader(shader);
+            return null;
+        }
+        return shader;
+    }
+
+    // Canvas 2D 回退（同步修改为Worley噪声）
+    function generateVoronoiNoise2D(size, cellSize, seed) {
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.createImageData(size, size);
+        const data = imageData.data;
+
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const cellX = Math.floor(x / cellSize);
+                const cellY = Math.floor(y / cellSize);
+                const localX = (x % cellSize) / cellSize;
+                const localY = (y % cellSize) / cellSize;
+
+                let minDist = Infinity;
+                let secondMinDist = Infinity;
+                let closestValue_r = 0, closestValue_g = 0, closestValue_b = 0, closestValue_a = 0;
+
+                for (let dy = -1; dy <= 1; dy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        const nx = cellX + dx;
+                        const ny = cellY + dy;
+                        const rng = splitMix32(seed + nx * 397 + ny * 7919);
+                        const px = rng();
+                        const py = rng();
+                        const dist = Math.hypot(dx + px - localX, dy + py - localY);
+
+                        if (dist < minDist) {
+                            secondMinDist = minDist;
+                            minDist = dist;
+                            closestValue_r = rng();
+                            closestValue_g = rng();
+                            closestValue_b = rng();
+                            closestValue_a = rng();
+                        } else if (dist < secondMinDist) {
+                            secondMinDist = dist;
+                        }
+                    }
+                }
+
+                // Worley噪声计算：a = 到最近点的距离，b = 到第二近点的距离 - a
+                const a = minDist;
+                const b = secondMinDist - a;
+                const worleyValue = 1.0 - (a / (a + b + 0.0001));
+
+                const rVal = channelTypes.r === 'random' ? closestValue_r : worleyValue;
+                const gVal = channelTypes.g === 'random' ? closestValue_g : worleyValue;
+                const bVal = channelTypes.b === 'random' ? closestValue_b : worleyValue;
+                const aVal = channelTypes.a === 'random' ? closestValue_a : worleyValue;
+
+                const i = (y * size + x) * 4;
+                if (channelCount === 1) {
+                    data[i] = data[i+1] = data[i+2] = rVal * 255;
+                    data[i+3] = 255;
+                } else if (channelCount === 3) {
+                    data[i] = rVal * 255; data[i+1] = gVal * 255; data[i+2] = bVal * 255; data[i+3] = 255;
+                } else {
+                    data[i] = rVal * 255; data[i+1] = gVal * 255; data[i+2] = bVal * 255; data[i+3] = aVal * 255;
+                }
+            }
+        }
+        ctx.putImageData(imageData, 0, 0);
+    }
+
+    function splitMix32(a) {
+        let s = a >>> 0;
+        return () => {
+            s += 0x9e3779b9;
+            let z = s;
+            z = (z ^ (z >>> 16)) * 0x85ebca6b;
+            z = (z ^ (z >>> 13)) * 0xc2b2ae35;
+            return ((z ^ (z >>> 16)) >>> 0) / 4294967296;
+        };
+    }
+
+    function updateZoom() {
+        document.getElementById('preview').style.transform = `scale(${zoomLevel})`;
+        document.getElementById('zoomInfo').textContent = `${Math.round(zoomLevel * 100)}%`;
+    }
+
+    function encodeTGA(w, h, data) {
+        const header = new Uint8Array(18);
+        header[2] = 2; header[12] = w & 255; header[13] = w >> 8;
+        header[14] = h & 255; header[15] = h >> 8;
+        header[16] = 32; header[17] = 8;
+        const pixels = new Uint8Array(w * h * 4);
+        for (let i = 0; i < data.length; i += 4) {
+            pixels[i] = data[i+2]; pixels[i+1] = data[i+1];
+            pixels[i+2] = data[i]; pixels[i+3] = data[i+3];
+        }
+        const result = new Uint8Array(18 + pixels.length);
+        result.set(header); result.set(pixels, 18);
+        return result;
+    }
+
+    function download(fmt) {
+        if (gl) {
+            const size = Math.min(currentSize, 4096);
+            canvas.width = size; canvas.height = size;
+            gl.viewport(0, 0, size, size);
+            const prog = gl.getParameter(gl.CURRENT_PROGRAM);
+            gl.uniform1f(gl.getUniformLocation(prog, "uSize"), size);
+            gl.uniform1f(gl.getUniformLocation(prog, "uNoiseSize"), noiseSize);
+            gl.uniform1f(gl.getUniformLocation(prog, "uSeed"), noiseSeed);
+            gl.uniform1i(gl.getUniformLocation(prog, "uRType"), channelTypes.r === 'random'?0:1);
+            gl.uniform1i(gl.getUniformLocation(prog, "uGType"), channelTypes.g === 'random'?0:1);
+            gl.uniform1i(gl.getUniformLocation(prog, "uBType"), channelTypes.b === 'random'?0:1);
+            gl.uniform1i(gl.getUniformLocation(prog, "uAType"), channelTypes.a === 'random'?0:1);
+            gl.uniform1i(gl.getUniformLocation(prog, "uChannelCount"), channelCount);
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+        } else {
+            generateVoronoiNoise2D(currentSize, noiseSize, noiseSeed);
+        }
+
+        const temp = document.createElement('canvas');
+        temp.width = canvas.width; temp.height = canvas.height;
+        const tctx = temp.getContext('2d');
+
+        if (gl) {
+            const pixels = new Uint8Array(canvas.width * canvas.height * 4);
+            gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+            const flipped = new Uint8Array(pixels.length);
+            for (let y = 0; y < canvas.height; y++) {
+                const src = (canvas.height - 1 - y) * canvas.width * 4;
+                const dst = y * canvas.width * 4;
+                flipped.set(pixels.subarray(src, src + canvas.width * 4), dst);
+            }
+            const img = tctx.createImageData(canvas.width, canvas.height);
+            img.data.set(flipped);
+            tctx.putImageData(img, 0, 0);
+        } else {
+            tctx.drawImage(canvas, 0, 0);
+        }
+
+        const a = document.createElement('a');
+        if (fmt === 'tga') {
+            const imgData = tctx.getImageData(0, 0, temp.width, temp.height);
+            const blob = new Blob([encodeTGA(temp.width, temp.height, imgData.data)], {type: 'image/tga'});
+            a.href = URL.createObjectURL(blob);
+            a.download = `glitter_mask_${currentSize}x${currentSize}.tga`;
+        } else {
+            a.href = temp.toDataURL('image/png');
+            a.download = `glitter_mask_${currentSize}x${currentSize}.png`;
+        }
+        a.click();
+        if (fmt === 'tga') setTimeout(() => URL.revokeObjectURL(a.href), 100);
+    }
+</script>
+
+</body>
+</html>
